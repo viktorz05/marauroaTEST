@@ -43,6 +43,12 @@
 		<pathelement path="."/>
 	</path>
 
+  <path id="pit.path">
+    <fileset dir="buildtools/pitest" includes="*.jar"/>
+    <pathelement path="${junit_jar}"/>
+  </path>
+
+  <taskdef name="pitest" classname="org.pitest.ant.PitestTask" classpathref="pit.path" /> 
 	<!-- Clears the instalation -->
 	<target name="clean">
 		<delete dir="${build}"/>
@@ -295,6 +301,7 @@
 			<classpath path="buildtools/jacoco/jacocoant.jar"/>
 		</taskdef>
 
+
 		<jacoco:coverage destfile="build/jacoco.exec" append="false">
 			<junit printsummary="yes" fork="yes" forkmode="once" haltonerror="true" haltonfailure="true">
 				<jvmarg value="-Djava.awt.headless=true"/>
@@ -328,5 +335,14 @@
 	    	<xml destfile="${build-coverage}/jacoco.xml" />
 	    </jacoco:report>
 	</target>
+  <target name="pit" depends="compile-tests">
+    <pitest
+        pitClasspath="pit.path"
+        classPath="run-tests-classpath"
+        targetClasses="marauroa.*"
+        targetTests="marauroa.*"
+        reportDir="mutation-results"
+        sourceDir="${src}"/>
+</target>
 
 </project>
