@@ -39,15 +39,16 @@
 	<path id="run-tests-classpath">
 		<path refid="compile-tests-classpath" />
 		<pathelement location="${h2_jar}"/>
+    <pathelement location="${hamcrest_jar}"/>
 		<pathelement path="${build-tests}" />
 		<pathelement path="."/>
 	</path>
 
   <path id="pit.path">
-    <fileset dir="buildtools/pitest" includes="*.jar"/>
-    <pathelement path="${junit_jar}"/>
+    <pathelement location="${pitest_jar}"/>
+    <pathelement location="${pitest_ant_jar}"/>
+    <pathelement location="${pitest_entry_jar}"/>
   </path>
-
   <taskdef name="pitest" classname="org.pitest.ant.PitestTask" classpathref="pit.path" /> 
 	<!-- Clears the instalation -->
 	<target name="clean">
