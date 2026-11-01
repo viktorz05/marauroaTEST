@@ -25,6 +25,7 @@
 		<pathelement path="${junit_jar}"/>
 		<pathelement path="${jnlp_jar}"/>
 		<pathelement path="${jython_jar}"/>
+    <pathelement location="${hamcrest_jar}"/>
 		  <fileset dir="${libdir}">
 		    <include name="tomcat*.jar"/>
 		    <include name="json-simple*.jar"/>
@@ -342,8 +343,20 @@
         classPath="run-tests-classpath"
         targetClasses="marauroa.*"
         targetTests="marauroa.*"
+        excludedTestClasses="marauroa.clientconnect.*,marauroa.server.game.db.*,marauroa.server.game.container.SecureLoginTest"
         reportDir="mutation-results"
-        sourceDir="${src}"/>
+        sourceDir="${src}"
+        verbose="false"
+      />
+</target>
+<target name="pit-db" depends="compile-tests">
+  <pitest
+      pitClasspath="pit.path"
+      classPath="run-tests-classpath"
+      targetClasses="marauroa.server.game.db.*"
+      targetTests="marauroa.server.game.db.CharacterAccessTest"
+      reportDir="mutation-results-db"
+      sourceDir="${src}"/>
 </target>
 
 </project>
