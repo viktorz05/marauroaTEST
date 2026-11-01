@@ -1,72 +1,34 @@
-Marauroa &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[![Build](https://img.shields.io/github/actions/workflow/status/arianne/marauroa/unittest.yml)](https://github.com/arianne/marauroa/actions) &nbsp;[![SourceForge](https://img.shields.io/sourceforge/dt/arianne.svg)](https://arianne-project.org/download/marauroa.zip) &nbsp;[![License GPL](https://img.shields.io/badge/license-GPL-blue.svg)](https://codeberg.org/arianne/marauroa/src/branch/master/LICENSE.txt) 
---------
-Marauroa is Arianne's Multiplayer Online Engine, that you can use to build
-your own online games. Marauroa handles client-server communication and 
-object persistence in a database.
+## Identification of the open-source project.
+We are testing the [Maraurora](https://arianne-project.org/engine/marauroa.html) project
+## Size of the code base (lines of code).
+26 kLoC
+## Proposed evaluation platform (OS, language).
+Java
+## Build time to compile and link an executable from source code.
+5 seconds using `ant`
+## Test suite infrastructure (JUnit?, Jasmine?, Mocha?, …).
+Maraurora uses `JUnit`
+## Number of tests, lines of code, & execution time for the test suite.
+Total test execution time was 7 seconds
 
-
-Extended Description
---------------------
-Marauroa is completely written in Java using a multithreaded server architecture
-with a TCP oriented network protocol, a SQL based persistence engine and a
-flexible game system based on open systems totally expandible and modifiable
-by developers. 
-
-Marauroa is based on a philosophy we call Action/Perception, on each turn a
-perception is sent to clients explaining them what they perceive and clients
-can ask server to do any action in their names using actions.
-
-Marauroa is totally game agnostic and makes very little assumptions about what
-are you trying to do, allowing a great freedom to create whatever type of game
-you want.
-
-You can find the latest version of Marauroa at:
-[https://arianne-project.org](https://arianne-project.org)
-
-
-Games based on Marauroa
------------------------
-
-Games and tools based on Marauroa:
-
-[![Marboard](https://arianne-project.org/screens/marboard/THM_marboard_dot.png)](https://arianne-project.org/tool/marboard.html)
-[![jMaPacman](https://arianne-project.org/screens/jmapacman/THM_20050702_jmapacman.jpg)](https://arianne-project.org/game/jmapacman.html)
-[![Stendhal](https://arianne-project.org/screens/stendhal/THM_Stendhal98.jpg)](https://arianne-project.org/game/stendhal.html)
-
-
-Developing with Marauroa
--------------------------
-Please check out the tutorial on the [Marauroa Wiki](https://stendhalgame.org/wiki/Marauroa).
-
-
-Building Marauroa
------------------
-To compile Marauroa you will need:
-
-- [Java SDK](https://www.oracle.com/technetwork/java/javase/downloads/index.html)
-- [Ant](https://ant.apache.org)
-
-Now just write: `ant dist`
-
-You need to grab a game package in order to be able to play it.
-
-
-
-Bugs
-----
-Please report bugs to [https://sourceforge.net/p/arianne/bugs/](https://sourceforge.net/p/arianne/bugs/)
-
-
-Testing
--------
-
-Run `ant test` to execute the test suite.
-
-
-Legal
------
-Marauroa(c) is copyright of Miguel Angel Blanch Lardin, 2003-2007,
-arianne_rpg at users dot sourceforge dot net
-
-Marauroa(c) is copyright of the Arianne Project, 2006-2026,
-arianne-general at lists dot sourceforge dot net
+## The reported line coverage (numerator and denominator)
+3979/12624
+## The reported mutation coverage (numerator and denominator)
+Generated 6288 mutations Killed 1533 (24%)
+## The output coverage reports that provide clear evidence of usage
+TODO
+## Do the test suites exhibit weaknesses? How can they be improved?
+Database and network tests are weak
+## Do the test suites exhibit strengths? How do you recognize them?
+TODO
+## Contrast the costs and benefits of mutation analysis and testing versus what you might expect from other techniques.
+TODO
+## What was easy and what was difficult about applying the tools to the projects you chose?
+The easy part was compiling and testing the project by itself. The hard part was getting PIT to work on our machines. Since Marauora uses `ant` to build, we had to get the correct `pitest` jars from the GitHub repo. WHich meant we needed to compile `pittest` itself and move the jars to the `libs/` directory in Marauora. Then we had to downgrade some libraries used by Marauora after reading all the error logs. 
+## What obstacles did you face in applying mutation analysis to a real world project, and how did you overcome them?
+PIT expected a a newer version of JUnit while our project was on an older release. Some of the database tests did not pass because the schema was not initialized during the tests. This is what claude told me but we should rewrite it in our own words:
+> PIT runs all 260 test classes in one minion JVM, and static singletons like TransactionPool and DAORegister carry state between them. Ant’s <junit> with forkmode="once" does the same, but PIT runs tests in a different order and may run them more than once, so the collisions only show up there.
+## Did you have any other interesting insights or opinions on the experience?
+Each of us can say whatever ig. <br>
+IMO (Viktor) it was interesting running the tests on this project which is an online game server, so as a user I wouldn't suspect how many interactions between components make the multiplayer game run. The fact that the mutation coverage is low may be a sign that the tests haven't been updated too often or they didn't take this approach into consideration when they were writing them.
+**We should add our raw opinion first and then make it sound "academic" later**
