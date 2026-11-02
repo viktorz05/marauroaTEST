@@ -354,7 +354,7 @@
       pitClasspath="pit.path"
       classPath="run-tests-classpath"
       targetClasses="marauroa.server.game.db.*"
-      targetTests="marauroa.server.game.db.CharacterAccessTest"
+      targetTests="marauroa.server.game.db.*"
       reportDir="mutation-results-db"
       sourceDir="${src}"/>
 </target>
