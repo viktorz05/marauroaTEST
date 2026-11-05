@@ -1,4 +1,4 @@
-# Group Analysis and Results: Marauora with PIT
+# Group Analysis and Results: Marauroa with PIT
 ## Identification of the open-source project.
 We are testing the [Maraurora](https://arianne-project.org/engine/marauroa.html) project. It is a multiplayer engine written in Java using a TCP oriented network protocol and an SQL based persistence engine. The project spans 26,000 lines of code and builds in 5 seconds from source code using `ant`. 
 ## Test suite infrastructure
@@ -45,7 +45,7 @@ Of the 7825 mutants, 2791 were killed, 20 timed out, 1400 survived and 3614 had 
 TODO
 ## What do the results tell you about your test suite?
 **DRAFT**
-The report shows that the most tested aspects of the project are `marauora.common.[game\net]` because they have the most amount of coverage.
+The report shows that the most tested aspects of the project are `marauroa.common.[game\net]` because they have the most amount of coverage.
 ## Which system did you find easier to use (both integrate and interpret) and why?
 **Stryker**, setup is confined within the project. It doesn't need additional dependencies on the machine unlike with PIT where you need OpenJDK etc. Stryker is project specific
 ## Do the test suites exhibit weaknesses? How can they be improved?
@@ -70,7 +70,7 @@ The strengths of the test suite can be seen in `marauroa.common.game` with 80% l
 These strengths are easy to recognize with the strong amount of coverage by the tests conducted, compared to the rest of the test coverage report, where most of the line and mutation coverage is at 0%.
 ### Stryker
 
-Small modules with pure logic are tested well, for example useViewDensity.ts (100%), content-logic.ts (96.8%) and useUndoRedo.ts (93.2%). The suite is strong where code is easy to isolate and weak where it touches the browser or the UI.
+Small modules with pure logic are tested well, for example `useViewDensity.ts` (100%), `content-logic.ts` (96.8%) and `useUndoRedo.ts` (93.2%). The suite is strong where code is easy to isolate and weak where it touches the browser or the UI.
 
 ## Contrast the costs and benefits of mutation analysis and testing versus what you might expect from other techniques.
 ### PIT
@@ -86,7 +86,7 @@ Mutation testing shows whether the tests would catch a fault, not just whether c
 
 ## What was easy and what was difficult about applying the tools to the projects you chose?
 ### PIT
-The easy part was compiling and testing the project once we got PIT setup. The hard part was getting PIT to work on our machines. Since Marauora uses `ant` to build, we had to get the correct `pitest` jars from the GitHub repo. Which meant we needed to compile `pittest` itself and move the jars to the `libs/` directory in Marauora. Then we had to downgrade some libraries used by Marauora after reading all the error logs. We also encountered issues where the build for PIT testing would fail since we didn't have a compatible environment for it and it was difficult to locate the root cause. We had to go through different possibilities on what might be failing such as looking into incompatible Java versions or missing packages such as OpenJDK since the build failure messages were hard to interpret with the sheer amount of information printed out.
+The easy part was compiling and testing the project once we got PIT setup. The hard part was getting PIT to work on our machines. Since Marauroa uses `ant` to build, we had to get the correct `pitest` jars from the GitHub repo. Which meant we needed to compile `pittest` itself and move the jars to the `libs/` directory in Marauroa. Then we had to downgrade some libraries used by Marauroa after reading all the error logs. We also encountered issues where the build for PIT testing would fail since we didn't have a compatible environment for it and it was difficult to locate the root cause. We had to go through different possibilities on what might be failing such as looking into incompatible Java versions or missing packages such as OpenJDK since the build failure messages were hard to interpret with the sheer amount of information printed out.
 ### Stryker
 Setup was easy because Stryker supports Vitest directly. The hard parts were that Stryker does not report line coverage, so we needed a second tool, and that the project-wide numbers had to be broken down by file before we could act on them.
 
@@ -132,7 +132,92 @@ For all mutants, try to determine whether they are duplicates of each other.
 What do these results say about the effectiveness of the test suite and the method(s) that you considered?
 
 ## Oliver Analysis
-TODO
+### Individual Analysis: selectTab
+
+I picked selectTab(direction) in src/actions/action-handlers.ts (lines 20-54). It is behind five shortcuts: next tab, previous tab, first tab, last tab and go to tab N. 
+
+```
+async function selectTab(direction: string): Promise<void> {
+  const tabs = await browser.tabs.query({ currentWindow: true })                          // 21
+  if (tabs.length <= 1) return                                                            // 22
+  const [currentTab] = await browser.tabs.query({ currentWindow: true, active: true })    // 24
+  const currentIndex = tabs.findIndex((t) => t.id === currentTab.id)                      // 25
+  let target
+  switch (direction) {
+    case 'next':     target = tabs[(currentIndex + 1) % tabs.length]; break               // 30
+    case 'previous': target = tabs[(currentIndex - 1 + tabs.length) % tabs.length]; break // 33
+    case 'first':    target = tabs[0]; break
+    case 'last':     target = tabs[tabs.length - 1]; break                                // 39
+    default: {
+      const index = parseInt(direction) || 0                                              // 42
+      if (index >= 1 && index <= tabs.length) target = tabs[index - 1]                    // 43
+    }
+  }
+  if (target?.id) await browser.tabs.update(target.id, { active: true })                  // 49-50
+}
+```
+
+
+
+I ran Stryker only on this method, using stryker.selecttab.config.json (before) and stryker.selecttab.after.config.json (after). Each run takes about 10 seconds. The configs, the reports and the test changes (selectTab-tests.patch) are in shortkeys-individual/.
+
+### How many mutants killed? How many mutants are live?
+
+Stryker made 50 mutants for this method.
+
+| | Killed | Survived | No coverage | Score |
+|---|---|---|---|---|
+| Before | 10 | 19 | 21 | 10/50 = 20% |
+| After my tests | 46 | 4 | 0 | 46/50 = 92% |
+
+The 4 survivors left are equivalent (see below), so excluding them the score is 46/46.
+
+The 21 uncovered mutants surprised me. The suite already has tests called handles action: firsttab, lasttab and gototabbyindex, but they all mock a window with a single tab, so selectTab returns at line 22 and the first/last/index code never runs.
+
+### For every mutant that was not killed, determine either (a) that it is an equivalent mutant that should not be killed, or (b) how to add a test to kill it
+
+1. Next tab: currentIndex + 1 changed to currentIndex - 1. Killed before and after.
+2. Previous tab: % tabs.length changed to * tabs.length. Killed before and after.
+3. The guard tabs.length <= 1 changed to tabs.length > 1. Killed before and after.
+4. The guard tabs.length <= 1 changed to tabs.length < 1. Survived before, killed after.
+5. Previous tab: currentIndex - 1 changed to currentIndex + 1. Survived before, killed after.
+6. Previous tab: + tabs.length changed to - tabs.length. Survived before, killed after.
+7. Finding the current tab: t.id === currentTab.id changed to t.id !== currentTab.id. Survived before, killed after.
+8. The first query: { currentWindow: true } changed to {}. Survived before, killed after.
+9. Last tab: tabs.length - 1 changed to tabs.length + 1. No coverage before, killed after.
+10. Go to tab N: index >= 1 changed to true. No coverage before, still survives after because it is equivalent.
+
+Before: 3 killed, 7 live, score 3/10 = 30%. After: 9 killed, 1 equivalent, score 9/10 = 90% (9/9 without the equivalent one).
+
+Mutants 1, 2 and 3 were already killed by the existing tests, so I left them as they were.
+
+For mutants 5 and 7, I changed the existing next and previous tab tests to check which tab is activated, not just that one is.
+
+For mutant 6, I added a test that starts on the first tab, goes to the previous tab, and expects the last tab.
+
+For mutant 8, I added a test that checks the arguments passed to tabs.query.
+
+For mutant 9, I added a test with three tabs that expects firsttab to pick tab 1 and lasttab to pick tab 3.
+
+For mutant 4, I added a test that a window with one tab gets no tabs.update call.
+
+Mutant 10 is equivalent. For an index below 1, tabs[index - 1] is undefined in JavaScript, so nothing happens, which is the same as the original. I added tests for positions 0, 4 and abc, and it still survives.
+
+### Other unkilled mutants and duplicates
+
+Three other mutants on line 43 are equivalent for the same reason: index <= tabs.length changed to true, the whole condition changed to true, and && changed to ||. Line 49 already ignores a missing target, so the range check on line 43 is redundant.
+
+The mutant that changes index >= 1 to index > 1 is not equivalent, because it breaks go to tab 1. I added position 1 to the tests to kill it.
+
+Mutant 4 and the mutant that replaces the same guard with false are duplicates, since a window always has at least one tab. The four equivalent mutants on line 43 are also duplicates of each other.
+
+### Challenges
+
+The hardest part was deciding equivalence, which needed reasoning about negative array indexes, parseInt and the sign of %. Some mutants, like mutant 6, only fail on one specific input, and I missed the index > 1 mutant the first time.
+
+### Conclusion
+
+The method is correct, but its tests were weak. They checked that a tab was activated but not which one, used a single tab that never got past the guard, and used mocks that ignore their arguments. With 9 new tests and 2 stronger ones, the score went from 20% to 92%, and the only survivors left are equivalent.
 ## Melody Analysis
 ### Project: [chrome-shortkeys](https://github.com/Atune-D/cmpt473-a3-shortkeys)
 
@@ -223,7 +308,7 @@ export function normalizeUrlPattern(pattern: string): string {
 **Original line:**
 
 
-`return `*${pattern}*` `
+`return *${pattern}*`
 
 **Mutant 10:**  
 
@@ -272,3 +357,160 @@ The tests detect most of the selected changes, but they miss two important regex
 
 
 ## Viktor Analysis
+### Project: Marauroa
+**Method chosen**: `src/marauroa/common/net/Decoder.java`
+```java
+public List<Message> decode(Object channel, byte[] data) throws IOException,
+        InvalidVersionException {
+  MessageParts buffers = content.get(channel);
+
+  if (buffers == null) {
+    /* First part of the message */
+    /*
+      * We need to be *sure* that 4 bytes are at least to
+      * be received...
+      */
+    if(data.length<4) {
+      throw new IOException("Message is too short. Missing mandatory fields.");
+    }
+
+    int size = getSizeOfMessage(data);
+
+    if(size<0) {
+      throw new IOException("Message size is negative. Message ignored.");
+    }
+
+    if (data.length == size) {
+      /* If we have the full data build the message */
+      Message msg = msgFactory.getMessage(data, 4);
+      List<Message> list=new LinkedList<Message>();
+      list.add(msg);
+
+      return list;
+    } else {
+      logger.debug("Message full body missing ("+size+"), waiting for more data ("+data.length+").");
+      /* If there is still data to store it. */
+      buffers = new MessageParts();
+      content.put(channel, buffers);
+    }
+  } else {
+    logger.debug("Existing data, trying to complete Message full body");
+  }
+
+  buffers.add(data);
+  List<Message> list = new LinkedList<Message>();
+
+  while (!buffers.isEmpty()) {
+    Message msg = buffers.build();
+
+    if (msg != null) {
+      list.add(msg);
+    } else {
+      if (list.isEmpty()) {
+        return null;
+      }
+      return list;
+    }
+  }
+
+  content.remove(channel);
+
+  return list;
+}
+```
+**Line:**
+
+`if (buffers == null) {...}`
+
+**Mutant 1:**
+
+1. negated conditional -> KILLED
+- **Type**: NEGATED_CONDITIONALS
+
+**Line:**
+`if(data.length<4) {...}`
+
+**Mutants 2 and 3:**
+1. changed conditional boundary -> SURVIVED
+- **Type**: CONDITIONALS_BOUNDARY
+2. negated conditional -> KILLED
+- **Type**: NEGATED_CONDITIONALS
+
+**Line:**
+`if(size<0) {`
+
+**Mutants 4 and 5:**
+1. negated conditional -> KILLED
+- **Type**: NEGATED_CONDITIONALS
+2. changed conditional boundary -> KILLED
+- **Type**: CONDITIONALS_BOUNDARY
+
+**Line:**
+
+`if (data.length == size) {`
+
+**Mutant 6:**
+
+1. negated conditional -> KILLED
+- **Type**: NEGATED_CONDITIONALS
+
+**Line:**
+
+`return list;`
+
+**Mutant 7:**
+
+1. replaced return value with `Collections.EmptyList` -> KILLED
+- **Type**: EMPTY_RETURNS
+
+**Line:**
+
+`logger.debug("Message full body missing ("+size+"), waiting for more data ("+data.length+").");`
+
+**Mutant 8:**
+
+1. removed call to `marauroa/common/Logger::debug` -> SURVIVED
+
+**Line:**
+
+`logger.debug("Existing data, trying to complete Message full body");`
+
+**Mutant 9:**
+
+1. removed call to `marauroa/common/Logger::debug` -> KILLED
+
+**Line:**
+
+`buffers.add(data);`
+
+**Mutant 10:**
+
+1. removed call to `marauroa/common/net/Decoder$MessageParts::add` -> KILLED
+
+### How many mutants killed? How many mutants are live?
+Out of 10 mutants, 8 were killed and 2 survived.
+### For every mutant that was not killed, determine either (a) that it is an equivalent mutant that should not be killed, or (b) how to add a test to kill it
+#### Mutant 2: `< 4` changed to `<= 4`
+a) This mutant is not equivalent because a test can tell the two inputs apart. The reason it survived is because no test sends exactly 4 bytes. 
+
+b) We could add a test that sends exactly a 4 byte header that says the message is longer than 4 bytes. The original code will wait for more data and the mutant throws an error.
+
+```java
+assertNull(Decoder.get().decode(new Object(), new byte[]{100, 0, 0, 0}));
+```
+
+#### Mutant 8: `logger.debug` removed
+This mutant is equivalent because the presence/absence of a debug log is indistinguishable from the original program. 
+
+This mutant could be killed by checking the log output and comparing against "Message full body..."
+### For all mutants, try to determine whether they are duplicates of each other. What are the challenges involved? Does it affect the results?
+Since no two mutants behave exactly the same on every input, there are no duplicates among the 10. If anything, mutants 4 and 5 overlap because of the condition change. 
+
+The biggest challenge in determining identical mutants is that we can't prove it just by reading the code. We'd have to work through them by hand to check.
+
+This affects the results in that killed duplicates make the score look better than it is. Surviving equivalent mutants make it look worse than it is.
+
+### Calculate and report the mutation score / effectiveness for your particular mutants. What do these results say about the effectiveness of the test suite and the method(s) that you considered?
+The mutation score for the 10 mutants is 80% (8/10). If the duplicates are counted as one mutant then it's 89% (8/9)
+
+The tests are mostly good at catching negated conditions and wrong return values, but miss the 4 byte boundary check for `decode`. The error cases (message too short, negative size) are never actually run. The mutants on those conditions were killed only because flipping them breaks normal inputs, so the score looks better than the real testing of those error cases.

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>README.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="group-analysis-and-results">Group Analysis and Results</h1>
+<h2 id="identification-of-the-open-source-project">Identification of the open-source project.</h2>
+<p>We are testing the <a href="https://arianne-project.org/engine/marauroa.html">Maraurora</a> project. It is a multiplayer engine written in Java using a TCP oriented network protocol and an SQL based persistence engine. The project spans 26,000 lines of code and builds in 5 seconds from source code using <code>ant</code>.</p>
+<h2 id="test-suite-infrastructure">Test suite infrastructure</h2>
+<p>Maraurora uses <code>JUnit</code> for its suite of 143 tests, across 2648 lines of code and takes 7 seconds to execute on a dry run, 4 seconds on subsequent runs.</p>
+<h2 id="results">Results</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Numerator / denominator</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Line coverage</td>
+<td>3979 / 12624</td>
+<td><strong>32%</strong></td>
+</tr>
+<tr>
+<td>Mutation score (killed + timeout)</td>
+<td>1533 / 6288</td>
+<td><strong>24%</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-output-coverage-reports-that-provide-clear-evidence-of-usage">The output coverage reports that provide clear evidence of usage</h2>
+<p><img src="file:///Users/viktorzepeda/codesfu/marauroaTEST/mutation-results/PIT-report.png" alt="report"></p>
+<h2 id="how-do-your-results-from-pit-and-stryker-compare">How do your results from PIT and Stryker compare?</h2>
+<p>TODO</p>
+<h2 id="what-do-the-results-tell-you-about-your-test-suite">What do the results tell you about your test suite?</h2>
+<p><strong>DRAFT</strong></p>
+<p>The report shows that the most tested aspects of the project are <code>marauora.common.[game\net]</code> because they have the most amount of coverage.</p>
+<h2 id="which-system-did-you-find-easier-to-use-both-integrate-and-interpret-and-why">Which system did you find easier to use (both integrate and interpret) and why?</h2>
+<p>TODO</p>
+<h2 id="do-the-test-suites-exhibit-weaknesses-how-can-they-be-improved">Do the test suites exhibit weaknesses? How can they be improved?</h2>
+<p>Database and network tests are weak</p>
+<h2 id="do-the-test-suites-exhibit-strengths-how-do-you-recognize-them">Do the test suites exhibit strengths? How do you recognize them?</h2>
+<p>TODO</p>
+<h2 id="contrast-the-costs-and-benefits-of-mutation-analysis-and-testing-versus-what-you-might-expect-from-other-techniques">Contrast the costs and benefits of mutation analysis and testing versus what you might expect from other techniques.</h2>
+<p><strong>Costs</strong>: Mutation testing with PIT took 1 minute 10 seconds for the target excluding the database tests and 88 seconds on the target with the database and connection tests.
+<strong>Benefits</strong> : idk</p>
+<h2 id="what-was-easy-and-what-was-difficult-about-applying-the-tools-to-the-projects-you-chose">What was easy and what was difficult about applying the tools to the projects you chose?</h2>
+<p>The easy part was compiling and testing the project by itself. The hard part was getting PIT to work on our machines. Since Marauora uses <code>ant</code> to build, we had to get the correct <code>pitest</code> jars from the GitHub repo. WHich meant we needed to compile <code>pittest</code> itself and move the jars to the <code>libs/</code> directory in Marauora. Then we had to downgrade some libraries used by Marauora after reading all the error logs.</p>
+<h2 id="what-obstacles-did-you-face-in-applying-mutation-analysis-to-a-real-world-project-and-how-did-you-overcome-them">What obstacles did you face in applying mutation analysis to a real world project, and how did you overcome them?</h2>
+<p>PIT expected a a newer version of JUnit while our project was on an older release. Some of the database tests did not pass because the schema was not initialized during the tests. This is what claude told me but we should rewrite it in our own words:</p>
+<blockquote>
+<p>PIT runs all 260 test classes in one minion JVM, and static singletons like TransactionPool and DAORegister carry state between them. Ant’s <junit> with forkmode=&quot;once&quot; does the same, but PIT runs tests in a different order and may run them more than once, so the collisions only show up there.
+The way we solved this issue was making a separate PIT target specifically for the database tests. This approach yielded another set of results and its own report.</p>
+</blockquote>
+<h2 id="did-you-have-any-other-interesting-insights-or-opinions-on-the-experience">Did you have any other interesting insights or opinions on the experience?</h2>
+<p>Each of us can say whatever ig. <br>
+IMO (Viktor) it was interesting running the tests on this project which is an online game server, so as a user I wouldn't suspect how many interactions between components make the multiplayer game run. The fact that the mutation coverage is low may be a sign that the tests haven't been updated too often or they didn't take this approach into consideration when they were writing them.
+<strong>We should add our raw opinion first and then make it sound &quot;academic&quot; later</strong></p>
+<h1 id="individual-analysis-and-results">Individual Analysis and Results</h1>
+<p>Choose a complex routine that you think is likely to have errors. If fewer than 10 mutants were generated for the method, then either select a different method or select additional methods until you have 10 mutants to consider.</p>
+<p>Examine 10 of the generated mutants for your method(s). If both killed and unkilled mutants were generated, include a mix of both. For each one, document your mutation operator. What was the type of operator used? How was it applied to the code (how did the code change)?</p>
+<p>For your individual mutants consider the following additional questions:</p>
+<ul>
+<li>How many mutants are killed?</li>
+<li>How many mutants are live?</li>
+<li>For every mutant that was not killed, try to determine either
+<ul>
+<li>(a) that it is an equivalent mutant that should not be killed</li>
+<li>(b) how to add a test to kill it.</li>
+</ul>
+</li>
+</ul>
+<p>Note that (b) involves a test case for a function with inputs and an oracle. Ideally, it is even written in the same testing framework as the project.</p>
+<p>For all mutants, try to determine whether they are duplicates of each other.</p>
+<ul>
+<li>What are the challenges involved?</li>
+<li>Does it affect the results?</li>
+<li>Calculate and report the mutation score / effectiveness for your particular mutants.</li>
+</ul>
+<p>What do these results say about the effectiveness of the test suite and the method(s) that you considered?</p>
+<h2 id="oliver-analysis">Oliver Analysis</h2>
+<p>TODO</p>
+<h2 id="melody-analysis">Melody Analysis</h2>
+<p>TODO</p>
+<h2 id="viktor-analysis">Viktor Analysis</h2>
+<p>TODO</p>
+
+</body>
+</html>
