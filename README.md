@@ -1,6 +1,6 @@
 # Group Analysis and Results: Marauroa with PIT
 ## Identification of the open-source project.
-We are testing the [Maraurora](https://arianne-project.org/engine/marauroa.html) project. It is a multiplayer engine written in Java using a TCP oriented network protocol and an SQL based persistence engine. The project spans 26,000 lines of code and builds in 5 seconds from source code using `ant`. 
+We are testing the project. It is a multiplayer engine written in Java using a TCP oriented network protocol and an SQL based persistence engine. The project spans 26,000 lines of code and builds in 5 seconds from source code using `ant`. 
 ## Test suite infrastructure
 Maraurora uses JUnit for its suite of 143 tests, across 2648 lines of code and takes 7 seconds to execute on a dry run, 4 seconds on subsequent runs.
 ## Results
@@ -57,9 +57,9 @@ These gaps could be improved by adding deterministic database integration tests 
 
 About a third of the code, the Vue components and the entrypoints, is never run by a unit test.
 
-Some tests check copies of the code instead of the code itself. injected-functions.test.ts and shortcut-recorder.test.ts import nothing from src/, and groups.test.ts uses its own grouping helpers, so useGroups.ts has 1.28% line coverage.
+Some tests check copies of the code instead of the code itself. `injected-functions.test.ts` and `shortcut-recorder.test.ts` import nothing from `src/`, and `groups.test.ts` uses its own grouping helpers, so `useGroups.ts` has 1.28% line coverage.
 
-Many tests run code without checking the result. action-handlers.ts has 80.2% line coverage but a 39.2% mutation score, and 611 of the 1400 survivors. Its tests often only check that something was called or that the handler returned true, and the browser mocks ignore their arguments.
+Many tests run code without checking the result. `action-handlers.ts` has 80.2% line coverage but a 39.2% mutation score, and 611 of the 1400 survivors. Its tests often only check that something was called or that the handler returned true, and the browser mocks ignore their arguments.
 
 To improve the suite, the copied functions should be tested directly, assertions should check exact values, mocks should check their arguments, and the untested composables need tests. Not every survivor is worth fixing: 607 are changed string or boolean literals, many of them UI labels.
 
@@ -107,45 +107,25 @@ Stryker also only mutates the script part of Vue files, so template bugs are not
 
 (Melody) It was interesting to see just how weak the test coverage for smaller areas of the program is with what looks like half being 0% line and mutation coverage. even though the main areas are well tested, it would definitely help with having some deterministic tests on networking and database as they are still an important area of the project overall
 
-(Oliver) Two Stryker runs on the same code gave slightly different scores (35.88% and 35.92%), because the number of timeouts in link-hints.ts changed. We used the second run. With 841 passing tests the project looks well tested, but only about a third of the mutants are killed.
+(Zheyuan) Two Stryker runs on the same code gave slightly different scores (35.88% and 35.92%), because the number of timeouts in link-hints.ts changed. We used the second run. With 841 passing tests the project looks well tested, but only about a third of the mutants are killed.
 
 
 # Individual Analysis and Results
-Choose a complex routine that you think is likely to have errors. If fewer than 10 mutants were generated for the method, then either select a different method or select additional methods until you have 10 mutants to consider.
-
-Examine 10 of the generated mutants for your method(s). If both killed and unkilled mutants were generated, include a mix of both. For each one, document your mutation operator. What was the type of operator used? How was it applied to the code (how did the code change)?
-
-For your individual mutants consider the following additional questions: 
-- How many mutants are killed?
-- How many mutants are live? 
-- For every mutant that was not killed, try to determine either 
-    - (a) that it is an equivalent mutant that should not be killed
-    - (b) how to add a test to kill it. 
-
-Note that (b) involves a test case for a function with inputs and an oracle. Ideally, it is even written in the same testing framework as the project. 
-
-For all mutants, try to determine whether they are duplicates of each other. 
-- What are the challenges involved?
-- Does it affect the results?
-- Calculate and report the mutation score / effectiveness for your particular mutants. 
-
-What do these results say about the effectiveness of the test suite and the method(s) that you considered?
-
-## Oliver Analysis
+## Zheyuan Analysis
 ### Individual Analysis: selectTab
 
-I picked selectTab(direction) in src/actions/action-handlers.ts (lines 20-54). It is behind five shortcuts: next tab, previous tab, first tab, last tab and go to tab N. 
+I picked `selectTab(direction)` in `src/actions/action-handlers.ts` (lines 20-54). It is behind five shortcuts: next tab, previous tab, first tab, last tab and go to tab N. 
 
-```
+```typescript
 async function selectTab(direction: string): Promise<void> {
   const tabs = await browser.tabs.query({ currentWindow: true })                          // 21
-  if (tabs.length <= 1) return                                                            // 22
+  if (`tabs.length <= 1`) return                                                            // 22
   const [currentTab] = await browser.tabs.query({ currentWindow: true, active: true })    // 24
-  const currentIndex = tabs.findIndex((t) => t.id === currentTab.id)                      // 25
+  const currentIndex = tabs.findIndex((t) => `t.id === currentTab.id`)                      // 25
   let target
   switch (direction) {
-    case 'next':     target = tabs[(currentIndex + 1) % tabs.length]; break               // 30
-    case 'previous': target = tabs[(currentIndex - 1 + tabs.length) % tabs.length]; break // 33
+    case 'next':     target = tabs[(`currentIndex + 1`) `% tabs.length`]; break               // 30
+    case 'previous': target = tabs[(`currentIndex - 1` `+ tabs.length`) `% tabs.length`]; break // 33
     case 'first':    target = tabs[0]; break
     case 'last':     target = tabs[tabs.length - 1]; break                                // 39
     default: {
@@ -157,9 +137,7 @@ async function selectTab(direction: string): Promise<void> {
 }
 ```
 
-
-
-I ran Stryker only on this method, using stryker.selecttab.config.json (before) and stryker.selecttab.after.config.json (after). Each run takes about 10 seconds. The configs, the reports and the test changes (selectTab-tests.patch) are in shortkeys-individual/.
+I ran Stryker only on this method, using `stryker.selecttab.config.json` (before) and stryker.`selecttab.after.config.json` (after). Each run takes about 10 seconds. The configs, the reports and the test changes (`selectTab-tests.patch`) are in `shortkeys-individual/`.
 
 ### How many mutants killed? How many mutants are live?
 
@@ -172,20 +150,20 @@ Stryker made 50 mutants for this method.
 
 The 4 survivors left are equivalent (see below), so excluding them the score is 46/46.
 
-The 21 uncovered mutants surprised me. The suite already has tests called handles action: firsttab, lasttab and gototabbyindex, but they all mock a window with a single tab, so selectTab returns at line 22 and the first/last/index code never runs.
+The 21 uncovered mutants surprised me. The suite already has tests called handles action: firsttab, lasttab and gototabbyindex, but they all mock a window with a single tab, so `selectTab` returns at line 22 and the first/last/index code never runs.
 
 ### For every mutant that was not killed, determine either (a) that it is an equivalent mutant that should not be killed, or (b) how to add a test to kill it
 
-1. Next tab: currentIndex + 1 changed to currentIndex - 1. Killed before and after.
-2. Previous tab: % tabs.length changed to * tabs.length. Killed before and after.
-3. The guard tabs.length <= 1 changed to tabs.length > 1. Killed before and after.
-4. The guard tabs.length <= 1 changed to tabs.length < 1. Survived before, killed after.
-5. Previous tab: currentIndex - 1 changed to currentIndex + 1. Survived before, killed after.
-6. Previous tab: + tabs.length changed to - tabs.length. Survived before, killed after.
-7. Finding the current tab: t.id === currentTab.id changed to t.id !== currentTab.id. Survived before, killed after.
-8. The first query: { currentWindow: true } changed to {}. Survived before, killed after.
-9. Last tab: tabs.length - 1 changed to tabs.length + 1. No coverage before, killed after.
-10. Go to tab N: index >= 1 changed to true. No coverage before, still survives after because it is equivalent.
+1. Next tab: `currentIndex + 1` changed to `currentIndex - 1`. Killed before and after.
+2. Previous tab: `% tabs.length` changed to `* tabs.length`. Killed before and after.
+3. The guard `tabs.length <= 1` changed to `tabs.length > 1`. Killed before and after.
+4. The guard `tabs.length <= 1` changed to `tabs.length < 1`. Survived before, killed after.
+5. Previous tab: `currentIndex - 1` changed to `currentIndex + 1`. Survived before, killed after.
+6. Previous tab: `+ tabs.length` changed to `- tabs.length`. Survived before, killed after.
+7. Finding the current tab: `t.id === currentTab.id` changed to `t.id !== currentTab.id`. Survived before, killed after.
+8. The first query: `{ currentWindow: true }` changed to `{}`. Survived before, killed after.
+9. Last tab: `tabs.length - 1` changed to `tabs.length + 1`. No coverage before, killed after.
+10. Go to tab N: `index >= 1` changed to `true`. No coverage before, still survives after because it is equivalent.
 
 Before: 3 killed, 7 live, score 3/10 = 30%. After: 9 killed, 1 equivalent, score 9/10 = 90% (9/9 without the equivalent one).
 
@@ -201,19 +179,19 @@ For mutant 9, I added a test with three tabs that expects firsttab to pick tab 1
 
 For mutant 4, I added a test that a window with one tab gets no tabs.update call.
 
-Mutant 10 is equivalent. For an index below 1, tabs[index - 1] is undefined in JavaScript, so nothing happens, which is the same as the original. I added tests for positions 0, 4 and abc, and it still survives.
+Mutant 10 is equivalent. For an index below 1, `tabs[index - 1]` is undefined in JavaScript, so nothing happens, which is the same as the original. I added tests for positions 0, 4 and abc, and it still survives.
 
 ### Other unkilled mutants and duplicates
 
-Three other mutants on line 43 are equivalent for the same reason: index <= tabs.length changed to true, the whole condition changed to true, and && changed to ||. Line 49 already ignores a missing target, so the range check on line 43 is redundant.
+Three other mutants on line 43 are equivalent for the same reason: `index <= tabs.length` changed to `true`, the whole condition changed to `true`, and `&&` changed to `||`. Line 49 already ignores a missing target, so the range check on line 43 is redundant.
 
-The mutant that changes index >= 1 to index > 1 is not equivalent, because it breaks go to tab 1. I added position 1 to the tests to kill it.
+The mutant that changes `index >= 1` to i`ndex > 1` is not equivalent, because it breaks go to tab 1. I added position 1 to the tests to kill it.
 
 Mutant 4 and the mutant that replaces the same guard with false are duplicates, since a window always has at least one tab. The four equivalent mutants on line 43 are also duplicates of each other.
 
 ### Challenges
 
-The hardest part was deciding equivalence, which needed reasoning about negative array indexes, parseInt and the sign of %. Some mutants, like mutant 6, only fail on one specific input, and I missed the index > 1 mutant the first time.
+The hardest part was deciding equivalence, which needed reasoning about negative array indexes, `parseInt` and the sign of `%`. Some mutants, like mutant 6, only fail on one specific input, and I missed the `index > 1` mutant the first time.
 
 ### Conclusion
 
@@ -308,13 +286,13 @@ export function normalizeUrlPattern(pattern: string): string {
 **Original line:**
 
 
-`return *${pattern}*`
+`` return `*${pattern}*` `` 
 
 **Mutant 10:**  
 
 `return `` `
 - StringLiteral
-- Change:  `return `*${pattern}*` ` &rarr; `return `` `
+- Change:  `` return `*${pattern}*` `` &rarr; `return `` `
 - Killed
 
 ### How many mutants killed? How many mutants are live?
@@ -358,7 +336,7 @@ The tests detect most of the selected changes, but they miss two important regex
 
 ## Viktor Analysis
 ### Project: Marauroa
-**Method chosen**: `src/marauroa/common/net/Decoder.java`
+**Method chosen**: `src/marauroa/common/net/Decoder.java` analyzed with PIT.
 ```java
 public List<Message> decode(Object channel, byte[] data) throws IOException,
         InvalidVersionException {
@@ -424,34 +402,34 @@ public List<Message> decode(Object channel, byte[] data) throws IOException,
 
 **Mutant 1:**
 
-1. negated conditional -> KILLED
+1. negated conditional &rarr; KILLED
 - **Type**: NEGATED_CONDITIONALS
 
 **Line:**
 `if(data.length<4) {...}`
 
 **Mutants 2 and 3:**
-1. changed conditional boundary -> SURVIVED
+1. changed conditional boundary &rarr; SURVIVED
 - **Type**: CONDITIONALS_BOUNDARY
-2. negated conditional -> KILLED
+2. negated conditional &rarr; KILLED
 - **Type**: NEGATED_CONDITIONALS
 
 **Line:**
-`if(size<0) {`
+`if(size<0) {...}`
 
 **Mutants 4 and 5:**
-1. negated conditional -> KILLED
+1. negated conditional &rarr; KILLED
 - **Type**: NEGATED_CONDITIONALS
-2. changed conditional boundary -> KILLED
+2. changed conditional boundary &rarr; KILLED
 - **Type**: CONDITIONALS_BOUNDARY
 
 **Line:**
 
-`if (data.length == size) {`
+`if (data.length == size) {...}`
 
 **Mutant 6:**
 
-1. negated conditional -> KILLED
+1. negated conditional &rarr; KILLED
 - **Type**: NEGATED_CONDITIONALS
 
 **Line:**
@@ -460,7 +438,7 @@ public List<Message> decode(Object channel, byte[] data) throws IOException,
 
 **Mutant 7:**
 
-1. replaced return value with `Collections.EmptyList` -> KILLED
+1. replaced return value with `Collections.EmptyList` &rarr; KILLED
 - **Type**: EMPTY_RETURNS
 
 **Line:**
@@ -469,7 +447,7 @@ public List<Message> decode(Object channel, byte[] data) throws IOException,
 
 **Mutant 8:**
 
-1. removed call to `marauroa/common/Logger::debug` -> SURVIVED
+1. removed call to `marauroa/common/Logger::debug` &rarr; SURVIVED
 
 **Line:**
 
@@ -477,7 +455,7 @@ public List<Message> decode(Object channel, byte[] data) throws IOException,
 
 **Mutant 9:**
 
-1. removed call to `marauroa/common/Logger::debug` -> KILLED
+1. removed call to `marauroa/common/Logger::debug` &rarr; KILLED
 
 **Line:**
 
@@ -485,7 +463,7 @@ public List<Message> decode(Object channel, byte[] data) throws IOException,
 
 **Mutant 10:**
 
-1. removed call to `marauroa/common/net/Decoder$MessageParts::add` -> KILLED
+1. removed call to `marauroa/common/net/Decoder$MessageParts::add` &rarr; KILLED
 
 ### How many mutants killed? How many mutants are live?
 Out of 10 mutants, 8 were killed and 2 survived.
