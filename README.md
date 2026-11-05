@@ -110,6 +110,8 @@ Stryker also only mutates the script part of Vue files, so template bugs are not
 (Zheyuan) Two Stryker runs on the same code gave slightly different scores (35.88% and 35.92%), because the number of timeouts in link-hints.ts changed. We used the second run. With 841 passing tests the project looks well tested, but only about a third of the mutants are killed.
 
 
+(Saud Imtiyaz) I found it surprising that adding seven focused tests improved mutation detection without increasing line coverage. Before this exercise, I would have considered passing tests and covered lines stronger evidence of correctness. Examining Attributes.fill showed that tests could execute copying logic while missing stale data, change tracking, and return values. Writing explicit inputs and expected outcomes made those weaknesses concrete. I also learned that surviving mutants require investigation rather than automatic classification as bugs. Checking reports carefully mattered too, because excluded tests and overlapping runs affected interpretation. Overall, mutation testing helped me think more critically about what assertions actually prove.
+
 # Individual Analysis and Results
 ## Zheyuan Analysis
 ### Individual Analysis: selectTab
@@ -492,3 +494,240 @@ This affects the results in that killed duplicates make the score look better th
 The mutation score for the 10 mutants is 80% (8/10). If the duplicates are counted as one mutant then it's 89% (8/9)
 
 The tests are mostly good at catching negated conditions and wrong return values, but miss the 4 byte boundary check for `decode`. The error cases (message too short, negative size) are never actually run. The mutants on those conditions were killed only because flipping them breaks normal inputs, so the score looks better than the real testing of those error cases.
+
+## Saud Imtiyaz Analysis
+### Individual analysis — Marauroa Attributes
+
+### Scope and method selection
+
+Project: Marauroa, analyzed using PIT and JUnit 4.13.2.
+Baseline commit: `584574c90f86612c6a988a31820bb1eec08de56f`.
+Source: `src/marauroa/common/game/Attributes.java`.
+
+`fill(Attributes attr)` replaces the destination object's state using a source object. It copies the RPClass and modified flag, clears and copies the current-content map and the added/deleted tracking maps, and returns the destination object. This is a stateful routine: correctness depends on replacing existing state consistently across several maps. Populated destinations and nonempty source change records are particularly useful cases to investigate. The selected mutations do not test every aspect of this method, including concurrency behavior.
+
+PIT generated eight mutants for `fill`. To reach the required ten, two mutants were selected from the related method `applyDifferences(Attributes addedChanges, Attributes deletedChanges)`. That method removes requested attributes except `id` and `zoneid`, then applies added/updated values. Its null checks, protected identifiers, and update order provide additional behavior to consider.
+
+### Ten selected mutants
+
+The following outcomes were reproduced in a targeted PIT run against the existing tests before adding any new tests. Each row describes a separate mutant. Source-level changes below explain PIT bytecode mutations; the source files were not manually changed.
+
+| ID | Method / line | PIT operator | Original | Mutated behavior/code | Outcome |
+|---|---|---|---|---|---|
+| M1 | `fill` / 76 | `VoidMethodCallMutator` | `setRPClass(attr.rpClass);` | `call removed` | SURVIVED |
+| M2 | `fill` / 79 | `VoidMethodCallMutator` | `content.clear();` | `call removed` | SURVIVED |
+| M3 | `fill` / 81 | `VoidMethodCallMutator` | `content.putAll(attr.content);` | `call removed` | KILLED |
+| M4 | `fill` / 84 | `VoidMethodCallMutator` | `added.clear();` | `call removed` | SURVIVED |
+| M5 | `fill` / 86 | `VoidMethodCallMutator` | `added.putAll(attr.added);` | `call removed` | SURVIVED |
+| M6 | `fill` / 89 | `VoidMethodCallMutator` | `deleted.clear();` | `call removed` | SURVIVED |
+| M7 | `fill` / 91 | `VoidMethodCallMutator` | `deleted.putAll(attr.deleted);` | `call removed` | SURVIVED |
+| M8 | `fill` / 94 | `NullReturnValsMutator` | `return this;` | `return null;` | SURVIVED |
+| M9 | `applyDifferences` / 896 | `NegateConditionalsMutator` | `deletedChanges != null` | `deletedChanges == null` | KILLED |
+| M10 | `applyDifferences` / 907 | `VoidMethodCallMutator` | `put(attrib, addedChanges.get(attrib));` | `call removed` | KILLED |
+
+### Behavioral effect of each mutation
+
+- **M1:** The destination retains its previous RPClass instead of taking the source class.
+- **M2:** Keys present only in the destination can remain after copying.
+- **M3:** Source content is not copied; destination content has already been cleared.
+- **M4:** Stale destination addition records can remain.
+- **M5:** Source addition records are not copied; the destination addition map has been cleared.
+- **M6:** Stale destination deletion records can remain.
+- **M7:** Source deletion records are not copied; the destination deletion map has been cleared.
+- **M8:** The method returns null instead of the destination object, although copying still runs.
+- **M9:** A non-null deletion set is skipped; a null deletion set enters iteration and can throw NullPointerException.
+- **M10:** Added or updated attribute values are not applied through this call.
+
+### Evidence for killed mutants
+
+- **M3:** PIT identifies `marauroa.common.game.RPObjectDelta2Test.testSlotObjectAddition` as the killing test.
+- **M9:** PIT identifies `marauroa.common.game.RPObjectDelta2Test.testApplyDifferences` as the killing test.
+- **M10:** PIT identifies `marauroa.common.game.GetAndApplyDifferencesTest.addedAttributeRPObject` as the killing test.
+
+M3 prevents content from being copied, which can break reconstruction of objects and their slot contents. M9 changes deletion processing and its null handling, which can break application of an object's changes. M10 omits insertion of an added attribute, which can make the reconstructed object differ from the expected object. These are explanations consistent with the mutation and test logic; the PIT killing-test records above are the experimental evidence.
+
+### Baseline counts
+
+For these ten selected mutants: **3 killed, 7 survived, 0 no coverage**. These are selected-sample results, not whole-project results. The survivor investigation, duplicate analysis, and score interpretation follow below.
+
+### Survivor investigation and implemented tests
+
+Seven JUnit 4 tests were added in `AttributesFillTest.java`. Each test passes on the original implementation. PIT was then rerun with unchanged production code and mutation configuration, adding these tests to the existing suite. The baseline reports were preserved separately.
+
+The maps `added` and `deleted` have package visibility, so tests in `marauroa.common.game` can inspect them without reflection or production-code changes. These assertions check the state copied by `fill`, which is subsequently used to construct change information. This choice couples those tests to the current map representation. The class-copy test uses distinct unregistered `RPClass()` instances to avoid modifying the static named-class registry.
+
+| Mutant | Test / input and setup | Expected result (oracle) | Mutant's distinguishing behavior | Verified outcome |
+|---|---|---|---|---|
+| M1 | `copiesSourceClass`: distinct source and destination RPClass instances | Destination class is the exact source class | Destination retains its old class | KILLED |
+| M2 | `replacesExistingContent`: source has `fresh=new value`; destination has `stale=old value` | No `stale`; size 1; `fresh=new value` | Old destination-only key remains | KILLED |
+| M4 | `clearsStaleAdditionRecords`: source has empty change maps; destination has added `stale` | Destination added map is empty | Stale addition record remains | KILLED |
+| M5 | `copiesSourceAdditionRecords`: source has added `score=42`; destination is empty | Destination added map is exactly `{score=42}` | Destination added map stays empty | KILLED |
+| M6 | `clearsStaleDeletionRecords`: destination records removal of `stale`; source is empty | Destination deleted map is empty | Stale deletion record remains | KILLED |
+| M7 | `copiesSourceDeletionRecords`: source records removal of `obsolete`; destination is empty | Destination deleted map is exactly `{obsolete=0}` | Destination deleted map stays empty | KILLED |
+| M8 | `returnsDestinationObject`: distinct source and destination objects | `fill` returns the exact destination instance | Returns null | KILLED |
+
+Each former survivor has a concrete state and oracle that distinguishes it from the original implementation. Therefore none of these seven is equivalent over the tested contract, which includes the copied change-tracking state. All seven differences were detected experimentally by PIT, rather than inferred only from reading code.
+
+#### Validation evidence
+
+- Original suite: 143 reported tests, 0 failures, 0 errors, 1 skipped (142 executed).
+- Extended suite: 150 reported tests, 0 failures, 0 errors, 1 skipped (149 executed). All seven new tests pass.
+- All ten selected mutants are killed after adding the tests; originally three were killed and seven survived. M3, already killed before the additions, is also killed by `replacesExistingContent` in the new run.
+- Across the targeted Attributes class, PIT's detected/killed count rises from 97/142 to 104/142. Line coverage remains 236/303 (78%). The unchanged line coverage and increased detection count illustrate improved checking of already-executed code.
+- The targeted PIT run took approximately 8 seconds, and the full Ant test target took approximately 6 seconds. These are local run measurements.
+
+The baseline and extended-suite PIT XML/HTML reports, test XML, and run logs are retained with the local individual-analysis artifacts. The generated XML identifies each new test as the killer of its corresponding former survivor. The baseline class report is also available in [the committed PIT report](mutation-results/marauroa.common.game/Attributes.java.html).
+
+These results concern the selected mutants and the targeted class, not the complete project's adequacy. New tests do not establish coverage of every possible fault or concurrent execution.
+
+### Duplicate analysis
+
+No behavioral duplicates were identified among the ten selected mutants. Here a duplicate means two mutated versions have the same observable behavior for every relevant input and initial state. Merely using the same operator, surviving the same suite, or being killed by the same test does not establish duplication.
+
+The comparison includes the destination's RPClass, content, addition/deletion records, return value, and exceptions. Package-visible tracking maps are included because `fill` copies them and subsequent delta processing uses them.
+
+| Mutants compared | Distinguishing state or call | Why their behavior differs |
+|---|---|---|
+| M2 versus M3 | Source content `{fresh=new}` and destination content `{stale=old}` | M2 leaves both keys; M3 leaves the content empty. The original leaves only `fresh`. |
+| M4 versus M5 | Source addition records `{fresh=new}` and destination addition records `{stale=old}` | M4 retains both records; M5 leaves the addition map empty. |
+| M6 versus M7 | Source deletion records `{fresh=0}` and destination deletion records `{stale=0}` | M6 retains both deletion records; M7 leaves the deletion map empty. |
+| M1 versus the other `fill` mutants | Distinct source/destination RPClass instances | Only M1 omits copying the class. The others copy it. |
+| M8 versus the other `fill` mutants | Call `fill` on distinct source/destination objects and inspect its result | Only M8 returns null; the others return the destination. |
+| Content versus addition versus deletion mutations | Use disjoint, nonempty source/destination content and change records, then inspect all three maps | The mutations change different maps. A missing content update is different from a missing change-tracking update. |
+| M9 versus M10 | Call `applyDifferences` with `deletedChanges=null` and an empty non-null addition set | M9 attempts to iterate null and throws; M10 does not. |
+| Any `fill` mutant versus M9/M10 | Call `fill` with the distinguishing state for that `fill` mutant | M9 and M10 leave the `fill` implementation unchanged, while the selected `fill` mutant changes its result or state. |
+
+The clear-versus-copy cases above are code-based distinguishing arguments; they were not separate pairwise mutant-execution experiments. The PIT experiments establish the reported mutant outcomes and the effectiveness of the new tests.
+
+The challenge is that differences depend on initial state. If a destination map is already empty, removing `clear` appears harmless. If a source map is empty, removing `putAll` can also appear harmless. Comparing only those inputs could incorrectly suggest equivalence or duplication. M2 and M3 are both killed by `replacesExistingContent`, but the different resulting contents demonstrate that they are not duplicates. Distinct killing tests alone would likewise not prove that two mutants are different.
+
+Duplicates can distort the score by giving repeated weight to the same behavior. If duplicates were found, a supplementary score could count each behavioral group once, adjusting both killed counts and denominators. No duplicate adjustment is applied here.
+
+### Mutation scores and effectiveness
+
+For this sample, mutation effectiveness is calculated as:
+
+`killed mutants / (selected mutants - equivalent mutants)`
+
+All ten selected mutants have been killed in at least one run, and each former survivor has a distinguishing test, so none is excluded as equivalent. There are no selected no-coverage mutants or timeouts, and no identified duplicate groups.
+
+| Scope | Before adding tests | After adding tests |
+|---|---|---|
+| Selected 10 mutants | **3/10 = 30%** (7 live) | **10/10 = 100%** (0 live) |
+| All 8 generated `fill` mutants | **1/8 = 12.5%** | **8/8 = 100%** |
+| Selected 2 `applyDifferences` mutants | **2/2 = 100%** | **2/2 = 100%** |
+| Entire targeted `Attributes` class, unadjusted PIT score | **97/142 = 68.31%** | **104/142 = 73.24%** |
+
+The selected-sample score increases by **70 percentage points**. The 2/2 figure for `applyDifferences` describes only the two chosen mutants; PIT generated five for that method. The class-wide scores retain all generated mutants in the denominator, including uncovered code, and do not claim a complete equivalence or duplicate review of the other class mutants.
+
+### Interpretation and limitations
+
+The original tests detect missing content copying (M3) and the selected deletion/addition faults in `applyDifferences` (M9 and M10). The killing tests exercise game-object changes, including nested slot objects and reconstruction of changed objects. This provides evidence of useful integration checks.
+
+However, only one of the eight `fill` mutants was originally killed. The original suite did not distinguish the selected faults involving stale destination data, source class copying, change-tracking maps, or the returned object. The survivor results identify gaps in checks or exercised states; they do not by themselves prove which assertion was absent from every existing test. Our added tests address these gaps with explicit state and identity oracles.
+
+Line coverage remains **236/303 (78%)** after the additions, while mutation detection improves. This shows that executing a line is insufficient to establish whether its effect is checked: tests can gain fault-detection ability without covering additional lines.
+
+The new suite kills every selected mutant, but that does not prove that `Attributes` or Marauroa is fully tested. The complete class still has **1 surviving mutant and 37 no-coverage mutants**. The sample was deliberately selected from related state-management behavior and is not a random or representative sample of the whole project. Concurrency, aliasing such as self-copying, other methods, and faults outside the generated mutation operators require separate investigation. Direct map assertions also couple some tests to the current implementation representation.
+
+The practical outcome is seven passing regression tests that detect seven previously undetected behavioral changes, with unchanged production code. Mutation analysis exposed specific weaknesses that the original passing test run and line-coverage percentage did not reveal.
+
+### Implemented JUnit tests
+
+```java
+package marauroa.common.game;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Collections;
+
+import org.junit.Test;
+
+/** Regression tests for replacing state through Attributes.fill. */
+public class AttributesFillTest {
+
+    @Test
+    public void copiesSourceClass() {
+        RPClass sourceClass = new RPClass();
+        Attributes source = new Attributes(sourceClass);
+        Attributes destination = new Attributes(new RPClass());
+
+        destination.fill(source);
+
+        assertSame(sourceClass, destination.getRPClass());
+    }
+
+    @Test
+    public void replacesExistingContent() {
+        Attributes source = new Attributes(new RPClass());
+        source.put("fresh", "new value");
+        Attributes destination = new Attributes(new RPClass());
+        destination.put("stale", "old value");
+
+        destination.fill(source);
+
+        assertFalse(destination.has("stale"));
+        assertEquals(1, destination.size());
+        assertEquals("new value", destination.get("fresh"));
+    }
+
+    @Test
+    public void clearsStaleAdditionRecords() {
+        Attributes source = new Attributes(new RPClass());
+        Attributes destination = new Attributes(new RPClass());
+        destination.put("stale", "old value");
+
+        destination.fill(source);
+
+        assertTrue(destination.added.isEmpty());
+    }
+
+    @Test
+    public void copiesSourceAdditionRecords() {
+        Attributes source = new Attributes(new RPClass());
+        source.put("score", "42");
+        Attributes destination = new Attributes(new RPClass());
+
+        destination.fill(source);
+
+        assertEquals(Collections.singletonMap("score", "42"), destination.added);
+    }
+
+    @Test
+    public void clearsStaleDeletionRecords() {
+        Attributes source = new Attributes(new RPClass());
+        Attributes destination = new Attributes(new RPClass());
+        destination.put("stale", "old value");
+        destination.resetAddedAndDeletedAttributes();
+        destination.remove("stale");
+
+        destination.fill(source);
+
+        assertTrue(destination.deleted.isEmpty());
+    }
+
+    @Test
+    public void copiesSourceDeletionRecords() {
+        Attributes source = new Attributes(new RPClass());
+        source.put("obsolete", "old value");
+        source.resetAddedAndDeletedAttributes();
+        source.remove("obsolete");
+        Attributes destination = new Attributes(new RPClass());
+
+        destination.fill(source);
+
+        assertEquals(Collections.singletonMap("obsolete", "0"), destination.deleted);
+    }
+
+    @Test
+    public void returnsDestinationObject() {
+        Attributes source = new Attributes(new RPClass());
+        Attributes destination = new Attributes(new RPClass());
+
+        assertSame(destination, destination.fill(source));
+    }
+}
+```
