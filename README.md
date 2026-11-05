@@ -110,7 +110,7 @@ Stryker also only mutates the script part of Vue files, so template bugs are not
 (Zheyuan) Two Stryker runs on the same code gave slightly different scores (35.88% and 35.92%), because the number of timeouts in link-hints.ts changed. We used the second run. With 841 passing tests the project looks well tested, but only about a third of the mutants are killed.
 
 
-(Saud Imtiyaz) I found it surprising that adding seven focused tests improved mutation detection without increasing line coverage. Before this exercise, I would have considered passing tests and covered lines stronger evidence of correctness. Examining Attributes.fill showed that tests could execute copying logic while missing stale data, change tracking, and return values. Writing explicit inputs and expected outcomes made those weaknesses concrete. I also learned that surviving mutants require investigation rather than automatic classification as bugs. Checking reports carefully mattered too, because excluded tests and overlapping runs affected interpretation. Overall, mutation testing helped me think more critically about what assertions actually prove.
+(Saud Imtiyaz) Writing explicit inputs and expected outcomes made those weaknesses concrete. I also learned that surviving mutants require investigation rather than automatic classification as bugs. Checking reports carefully mattered too, because excluded tests and overlapping runs affected interpretation. Overall, mutation testing helped me think more critically about what assertions actually prove.
 
 # Individual Analysis and Results
 ## Zheyuan Analysis
