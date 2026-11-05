@@ -42,7 +42,10 @@ Of the 7825 mutants, 2791 were killed, 20 timed out, 1400 survived and 3614 had 
 ![Stryker-mutants](stryker-report/stryker-mutants.png)
 
 ## How do your results from PIT and Stryker compare?
-TODO
+Shortkeys had higher overall line and mutation coverage than Marauroa. Stryker detected about 36% of mutants, compared with PIT's 24%. However, when considering only covered code, both detected roughly two-thirds of mutants. This suggests that reaching more code contributed to Shortkeys' higher overall score.
+
+Both reports show strengths in particular areas and gaps elsewhere. Marauroa's common game and networking packages performed relatively well, while Shortkeys' utilities were stronger than its untested components and entrypoints. Both suites would benefit from tests that exercise missing paths and check outcomes more precisely. Since these are different projects and configurations, the results do not establish that one tool is better.
+
 ## What do the results tell you about your test suite?
 The PIT report shows that the most tested aspects of the project are `marauroa.common.[game\net]` because they have the most amount of coverage. The reason is that since Marauroa is an online engine, it makes sense that the most tested code is spent on the network and game logic side, rather than testing the database or IO interactions.
 
