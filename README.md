@@ -44,8 +44,9 @@ Of the 7825 mutants, 2791 were killed, 20 timed out, 1400 survived and 3614 had 
 ## How do your results from PIT and Stryker compare?
 TODO
 ## What do the results tell you about your test suite?
-**DRAFT**
-The report shows that the most tested aspects of the project are `marauroa.common.[game\net]` because they have the most amount of coverage.
+The PIT report shows that the most tested aspects of the project are `marauroa.common.[game\net]` because they have the most amount of coverage. The reason is that since Marauroa is an online engine, it makes sense that the most tested code is spent on the network and game logic side, rather than testing the database or IO interactions.
+
+The Stryker report for chromekeys shows that `actions` and `utils` are the most tested components in the project and each have a reasonable, but not great, mutation score. The `components` and `entrypoints` directories weren't even tested because they're mostly UI.
 ## Which system did you find easier to use (both integrate and interpret) and why?
 **Stryker**, setup is confined within the project. It doesn't need additional dependencies on the machine unlike with PIT where you need OpenJDK etc. Stryker is project specific
 ## Do the test suites exhibit weaknesses? How can they be improved?
